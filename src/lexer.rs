@@ -1,10 +1,12 @@
 use std::str::Chars;
 use std::iter::Enumerate;
 
+#[derive(Debug)]
 pub struct Position {
 	pub index: usize
 }
 
+#[derive(Debug)]
 pub enum TokenType {
 	Ident(String),
 	ParenOpen,
@@ -16,6 +18,7 @@ pub enum TokenType {
 	Unknown,
 }
 
+#[derive(Debug)]
 pub struct Token {
 	pub position: Position,
 	pub token_type: TokenType,	
@@ -44,6 +47,10 @@ macro_rules! whitespace_pattern {
 	};
 }
 
+/*
+ * this seems great but will over shoot on the iter
+ */
+
 fn for_ident(src_iter: SrcIter) -> ((String, usize), SrcIter) {
 	let mut mut_iter = src_iter.clone();
 	let result = mut_iter.by_ref().try_fold((String::new(), 0), | (ident, index), (i, c)| {
@@ -53,8 +60,8 @@ fn for_ident(src_iter: SrcIter) -> ((String, usize), SrcIter) {
 		}
 	});
 	match result {
-		Ok(acc) => (acc, src_iter),
-		Err(acc) => (acc, src_iter)
+		Ok(acc) => (acc, mut_iter),
+		Err(acc) => (acc, mut_iter)
 	}
 }
 
@@ -67,8 +74,8 @@ fn for_whitespace(src_iter: SrcIter) -> (usize, SrcIter) {
 		}
 	});
 	match result {
-		Ok(acc) => (acc, src_iter),
-		Err(acc) => (acc, src_iter)
+		Ok(acc) => (acc, mut_iter),
+		Err(acc) => (acc, mut_iter)
 	}
 }
 
@@ -91,8 +98,11 @@ pub fn lex(src: String) -> Vec<Token> {
 				let mut arrow_iter = current_iter.clone();
 				match arrow_iter.next() {
 					Some((i, '>')) => (Token::new(i, TokenType::Arrow), arrow_iter),
-					_ => (Token::new(i, TokenType::Ident(String::from("-"))), current_iter)
-						// if this is ident it would need to see how far it can go
+					_ => {
+						let ((ident_tail, index), new_iter) = for_ident(current_iter);
+						let ident = String::from(c) + ident_tail.as_str();
+						(Token::new(index, TokenType::Ident(ident)), new_iter)
+					}
 				}
 			},
 			'=' => (Token::new(i, TokenType::Assign), current_iter),
