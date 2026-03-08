@@ -53,20 +53,17 @@ fn while_fold<Acc, Fold>(src_iter: SrcIter, acc: Acc, fold: Fold) -> (Acc, usize
 { 
 	let mut current_iter = src_iter.clone();
 	let mut previous_iter = src_iter.clone();
+	let mut found = true;
 	let mut current_acc = acc;
 	let mut index = 0;
-	while let Some((i, c)) = current_iter.next() {
+	while let Some((i, c)) = current_iter.next() && found {
 		match fold(&current_acc, c) {
 			Some(acc) => { current_acc = acc; previous_iter = current_iter.clone(); },
-			None => { index = i - 1; }
+			None => { index = i - 1; found = false; }
 		}
 	}
 	(current_acc, index, previous_iter)
 }
-
-/*
- * this seems great but will over shoot on the iter
- */
 
 fn for_ident(src_iter: SrcIter) -> (String, usize, SrcIter) {
 	while_fold(src_iter, String::new(), | acc, c | {
@@ -78,18 +75,20 @@ fn for_ident(src_iter: SrcIter) -> (String, usize, SrcIter) {
 }
 
 fn for_whitespace(src_iter: SrcIter) -> (usize, SrcIter) {
-	let mut mut_iter = src_iter.clone();
-	let result = mut_iter.by_ref().try_fold(0, |acc, (i, c)| {
+	let (_, index, iter) = while_fold(src_iter, (), | _, c | {
 		match c {
-			whitespace_pattern!() => Ok(i),
-			_ => Err(acc)
+			whitespace_pattern!() => Some(()),
+			_ => None 
 		}
 	});
-	match result {
-		Ok(acc) => (acc, mut_iter),
-		Err(acc) => (acc, mut_iter)
-	}
+	(index, iter)
 }
+
+/*
+ * !!!!!!!
+ * change this so that it just stores the starting index? would be easier
+ *
+ */
 
 pub fn lex(src: String) -> Vec<Token> {
 	let mut tokens = Vec::new();
@@ -111,7 +110,7 @@ pub fn lex(src: String) -> Vec<Token> {
 				match arrow_iter.next() {
 					Some((i, '>')) => (Token::new(i, TokenType::Arrow), arrow_iter),
 					_ => {
-						let ((ident_tail, index), new_iter) = for_ident(current_iter);
+						let (ident_tail, index, new_iter) = for_ident(current_iter);
 						let ident = String::from(c) + ident_tail.as_str();
 						(Token::new(index, TokenType::Ident(ident)), new_iter)
 					}
@@ -121,7 +120,7 @@ pub fn lex(src: String) -> Vec<Token> {
 			'(' => (Token::new(i, TokenType::ParenOpen), current_iter),
 			')' => (Token::new(i, TokenType::ParenClose), current_iter),
 			ident_pattern!() => {
-				let ((ident_tail, index), new_iter) = for_ident(current_iter);
+				let (ident_tail, index, new_iter) = for_ident(current_iter);
 				let ident = String::from(c) + ident_tail.as_str();
 				(Token::new(index, TokenType::Ident(ident)), new_iter)
 			},
