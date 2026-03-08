@@ -47,22 +47,34 @@ macro_rules! whitespace_pattern {
 	};
 }
 
+fn while_fold<Acc, Fold>(src_iter: SrcIter, acc: Acc, fold: Fold) -> (Acc, usize, SrcIter)
+	where
+		Fold: Fn(&Acc, char) -> Option<Acc>
+{ 
+	let mut current_iter = src_iter.clone();
+	let mut previous_iter = src_iter.clone();
+	let mut current_acc = acc;
+	let mut index = 0;
+	while let Some((i, c)) = current_iter.next() {
+		match fold(&current_acc, c) {
+			Some(acc) => { current_acc = acc; previous_iter = current_iter.clone(); },
+			None => { index = i - 1; }
+		}
+	}
+	(current_acc, index, previous_iter)
+}
+
 /*
  * this seems great but will over shoot on the iter
  */
 
-fn for_ident(src_iter: SrcIter) -> ((String, usize), SrcIter) {
-	let mut mut_iter = src_iter.clone();
-	let result = mut_iter.by_ref().try_fold((String::new(), 0), | (ident, index), (i, c)| {
+fn for_ident(src_iter: SrcIter) -> (String, usize, SrcIter) {
+	while_fold(src_iter, String::new(), | acc, c | {
 		match c {
-			ident_pattern!() => Ok((ident + &c.to_string(), i)),
-			_ => Err((ident, index))
+			ident_pattern!() => Some(acc.clone() + &c.to_string()),
+			_ => None 
 		}
-	});
-	match result {
-		Ok(acc) => (acc, mut_iter),
-		Err(acc) => (acc, mut_iter)
-	}
+	})
 }
 
 fn for_whitespace(src_iter: SrcIter) -> (usize, SrcIter) {
