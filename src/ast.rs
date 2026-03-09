@@ -4,7 +4,7 @@ pub enum Node {
 	Ident(String)
 }
 
-pub struct Prog {
+pub struct Ast {
 	pub declarations: Vec<Node>,
 	pub eval: Node
 }

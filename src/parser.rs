@@ -1,7 +1,7 @@
-use crate::ast::{Node, Prog};
+use crate::ast::{Node, Ast};
 use crate::lexer::Token;
 
-pub fn parse(tokens: Vec<Token>) -> Prog {
+pub fn parse(tokens: Vec<Token>) -> Ast {
 
 	let mut declarations: Vec<Node> = Vec::new();	
 
