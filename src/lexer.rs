@@ -1,12 +1,12 @@
 use std::str::Chars;
 use std::iter::Enumerate;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Position {
 	pub index: usize
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
 	Ident(String),
 	ParenOpen,
@@ -18,7 +18,7 @@ pub enum TokenType {
 	Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
 	pub position: Position,
 	pub token_type: TokenType,	
@@ -47,7 +47,7 @@ macro_rules! whitespace_pattern {
 	};
 }
 
-fn while_fold<Acc, Fold>(src_iter: SrcIter, acc: Acc, fold: Fold) -> (Acc, usize, SrcIter)
+fn fold_while<Acc, Fold>(src_iter: SrcIter, acc: Acc, fold: Fold) -> (Acc, usize, SrcIter)
 	where
 		Fold: Fn(&Acc, char) -> Option<Acc>
 { 
@@ -66,7 +66,7 @@ fn while_fold<Acc, Fold>(src_iter: SrcIter, acc: Acc, fold: Fold) -> (Acc, usize
 }
 
 fn for_ident(src_iter: SrcIter) -> (String, usize, SrcIter) {
-	while_fold(src_iter, String::new(), | acc, c | {
+	fold_while(src_iter, String::new(), | acc, c | {
 		match c {
 			ident_pattern!() => Some(acc.clone() + &c.to_string()),
 			_ => None 
@@ -75,7 +75,7 @@ fn for_ident(src_iter: SrcIter) -> (String, usize, SrcIter) {
 }
 
 fn for_whitespace(src_iter: SrcIter) -> (usize, SrcIter) {
-	let (_, index, iter) = while_fold(src_iter, (), | _, c | {
+	let (_, index, iter) = fold_while(src_iter, (), | _, c | {
 		match c {
 			whitespace_pattern!() => Some(()),
 			_ => None 

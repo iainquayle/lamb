@@ -1,6 +1,7 @@
+#[derive(Debug, Clone, PartialEq)]
 pub enum Node {
-	Func { binding: String, output: Box<Node> },
-	Call(Box<Node>),
+	Func { binding: String, expr: Box<Node> },
+	Call { lhs: Box<Node>, rhs: Box<Node> },
 	Ident(String)
 }
 
