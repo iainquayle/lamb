@@ -5,6 +5,7 @@ pub enum Node {
 	Ident(String)
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ast {
 	pub declarations: Vec<Node>,
 	pub eval: Node

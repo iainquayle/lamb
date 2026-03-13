@@ -8,9 +8,10 @@ use parser::parse;
 fn main() {
     println!("Hello, world!");
 	
-	let src = String::from("hello -> -h (  )      h");
+	let src = String::from("(x -> y -> x ( x y ) y)");
 	let tokens = lex(src);
 	println!("{:?}", tokens);
 
 	let ast = parse(tokens);
+	println!("{:?}", ast);
 }

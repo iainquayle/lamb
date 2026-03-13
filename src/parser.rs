@@ -3,16 +3,21 @@ use crate::lexer::{Token, TokenType};
 
 //type TokenIter<'a> = std::slice::Iter<'a, Token>;
 
-pub fn parse(tokens: Vec<Token>) -> Ast {
+pub fn parse(tokens: Vec<Token>) -> Result<Ast, String> {
 	let filtered_tokens: Vec<Token> = tokens.into_iter().filter(|t| { 
 		!matches!(t, Token { token_type: TokenType::Whitespace, ..})
 	}).collect();
 
-	//let mut declarations: Vec<Node> = Vec::new();	
+	let mut declarations: Vec<Node> = Vec::new();	
 	
-	let expr = parse_function(&filtered_tokens);
+	let result = parse_function(&filtered_tokens);
 
-	todo!()
+	match result {
+		Ok((expr, _)) => Ok(Ast { declarations, eval: expr }),
+		Err(err) => Err(err)
+	}
+
+	
 }
 
 fn parse_function(tokens: &[Token]) -> Result<(Node, &[Token]), String> {
