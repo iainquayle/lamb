@@ -1,9 +1,14 @@
-use crate::ast::{Node, Ast};
-use crate::lexer::{Token, TokenType};
+use crate::ast::Node;
+use crate::lexer::{Token, TokenType, Position};
 
-//type TokenIter<'a> = std::slice::Iter<'a, Token>;
+#[derive(Debug)]
+pub enum ParseErrors {
+	NoClosingParen(Position),	
+	NotPrimary(Position),
+	Eof
+}
 
-pub fn parse(tokens: Vec<Token>) -> Result<Node, String> {
+pub fn parse(tokens: Vec<Token>) -> Result<Node, ParseErrors> {
 	let filtered_tokens: Vec<Token> = tokens.into_iter().filter(|t| { 
 		!matches!(t, Token { token_type: TokenType::Whitespace, ..})
 	}).collect();
@@ -16,11 +21,9 @@ pub fn parse(tokens: Vec<Token>) -> Result<Node, String> {
 		Ok((expr, _)) => Ok(expr),
 		Err(err) => Err(err)
 	}
-
-	
 }
 
-fn parse_function(tokens: &[Token]) -> Result<(Node, &[Token]), String> {
+fn parse_function(tokens: &[Token]) -> Result<(Node, &[Token]), ParseErrors> {
 	match tokens {
 		[ 
 			Token { token_type: TokenType::Ident(ident),  .. },
@@ -38,7 +41,7 @@ fn parse_function(tokens: &[Token]) -> Result<(Node, &[Token]), String> {
 	} 
 }
 
-fn parse_call(lhs: Option<Node>, tokens: &[Token]) -> Result<(Node, &[Token]), String> {
+fn parse_call(lhs: Option<Node>, tokens: &[Token]) -> Result<(Node, &[Token]), ParseErrors> {
 	match lhs {
 		Some(lhs_node) => match parse_primary(tokens) {
 			Ok((rhs_node, tokens)) => parse_call( 
@@ -55,17 +58,19 @@ fn parse_call(lhs: Option<Node>, tokens: &[Token]) -> Result<(Node, &[Token]), S
 	}
 }
 
-fn parse_primary(tokens: &[Token]) -> Result<(Node, &[Token]), String> {
+fn parse_primary(tokens: &[Token]) -> Result<(Node, &[Token]), ParseErrors> {
 	match tokens {
 		[ Token { token_type: TokenType::ParenOpen, .. }, tokens @ ..] => match parse_function(tokens) {
 			Ok((node, tokens)) => match tokens {
 				[ Token { token_type: TokenType::ParenClose, .. }, tokens @ ..] => Ok((node, tokens)),
-				_ => Err("".to_string())
+				[ Token { position, .. }, ..] => Err(ParseErrors::NoClosingParen(position.clone())),
+				[] => Err(ParseErrors::Eof)
 			}
 			result @ Err(_) => result
 		},
 		[ Token { token_type: TokenType::Ident(ident), .. }, tokens @ ..] => 
 			Ok((Node::Ident(ident.to_string()), tokens)),
-		_ => Err("".to_string())
+		[ Token { position, .. }, ..] => Err(ParseErrors::NotPrimary(position.clone())),
+		[] => Err(ParseErrors::Eof)
 	}
 }
