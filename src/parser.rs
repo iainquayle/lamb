@@ -1,11 +1,37 @@
 use crate::ast::Node;
 use crate::lexer::{Token, TokenType, Position};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum ParseErrors {
 	NoClosingParen(Position),	
 	NotPrimary(Position),
 	Eof
+}
+
+struct IdentMap {
+	map: HashMap<String, usize>,
+	current_index: usize
+}
+
+impl IdentMap {
+	pub fn new() -> Self {
+		Self {
+			map: HashMap::new(),
+			current_index: 0
+		}
+	}
+	pub fn get_index(&mut self, ident: &String) -> usize {
+		match self.map.get(ident) {
+			Some(index) => *index,
+			None => {
+				_ = self.map.insert(ident.clone(), self.current_index);
+				let current_index = self.current_index;
+				self.current_index += 1;
+				current_index
+			}
+		}
+	}
 }
 
 pub fn parse(tokens: Vec<Token>) -> Result<Node, ParseErrors> {
@@ -15,7 +41,7 @@ pub fn parse(tokens: Vec<Token>) -> Result<Node, ParseErrors> {
 
 	//let mut declarations: Vec<Node> = Vec::new();	
 	
-	let result = parse_function(&filtered_tokens);
+	let result = parse_function(&filtered_tokens, &mut IdentMap::new());
 
 	match result {
 		Ok((expr, _)) => Ok(expr),
@@ -23,44 +49,44 @@ pub fn parse(tokens: Vec<Token>) -> Result<Node, ParseErrors> {
 	}
 }
 
-fn parse_function(tokens: &[Token]) -> Result<(Node, &[Token]), ParseErrors> {
+fn parse_function<'a>(tokens: &'a[Token], ident_map: &mut IdentMap) -> Result<(Node, &'a[Token]), ParseErrors> {
 	match tokens {
 		[ 
 			Token { token_type: TokenType::Ident(ident),  .. },
 			Token { token_type: TokenType::Arrow, .. }, 
 			tokens @ ..
-		]  =>  match parse_function(tokens) {
+		]  =>  match parse_function(tokens, ident_map) {
 			Ok((node, tokens)) => Ok(( 
 					Node::Func { 
-						binding: ident.to_string(), 
+						binding: ident_map.get_index(ident), 
 						expr: Box::new(node) 
 					}, tokens)),
 			expr_result @ Err(_) => expr_result
 		},
-		_ => parse_call(None, tokens)
+		_ => parse_call(None, tokens, ident_map)
 	} 
 }
 
-fn parse_call(lhs: Option<Node>, tokens: &[Token]) -> Result<(Node, &[Token]), ParseErrors> {
+fn parse_call<'a>(lhs: Option<Node>, tokens: &'a[Token], ident_map: &mut IdentMap) -> Result<(Node, &'a[Token]), ParseErrors> {
 	match lhs {
-		Some(lhs_node) => match parse_primary(tokens) {
+		Some(lhs_node) => match parse_primary(tokens, ident_map) {
 			Ok((rhs_node, tokens)) => parse_call( 
-				Some( Node::Call {
+				Some( Node::Apply {
 					lhs: Box::new(lhs_node), 
 					rhs: Box::new(rhs_node)
-				}), tokens),
+				}), tokens, ident_map),
 			Err(_) => Ok((lhs_node, tokens))
 		} 
-		None => match parse_primary(tokens) {
-			Ok((node, tokens)) => parse_call(Some(node), tokens),
+		None => match parse_primary(tokens, ident_map) {
+			Ok((node, tokens)) => parse_call(Some(node), tokens, ident_map),
 			result @ Err(_) => result
 		}
 	}
 }
 
-fn parse_primary(tokens: &[Token]) -> Result<(Node, &[Token]), ParseErrors> {
+fn parse_primary<'a>(tokens: &'a[Token], ident_map: &mut IdentMap) -> Result<(Node, &'a[Token]), ParseErrors> {
 	match tokens {
-		[ Token { token_type: TokenType::ParenOpen, .. }, tokens @ ..] => match parse_function(tokens) {
+		[ Token { token_type: TokenType::ParenOpen, .. }, tokens @ ..] => match parse_function(tokens, ident_map) {
 			Ok((node, tokens)) => match tokens {
 				[ Token { token_type: TokenType::ParenClose, .. }, tokens @ ..] => Ok((node, tokens)),
 				[ Token { position, .. }, ..] => Err(ParseErrors::NoClosingParen(position.clone())),
@@ -69,7 +95,7 @@ fn parse_primary(tokens: &[Token]) -> Result<(Node, &[Token]), ParseErrors> {
 			result @ Err(_) => result
 		},
 		[ Token { token_type: TokenType::Ident(ident), .. }, tokens @ ..] => 
-			Ok((Node::Ident(ident.to_string()), tokens)),
+			Ok((Node::Ident(ident_map.get_index(ident)), tokens)),
 		[ Token { position, .. }, ..] => Err(ParseErrors::NotPrimary(position.clone())),
 		[] => Err(ParseErrors::Eof)
 	}
