@@ -1,31 +1,42 @@
-use crate::ast::{Node};
-
 // track scope while applying bindings
 // when applying to an ident, replace with scoped binding
 // when returning a fn, return it with its scope
 // would need to track stack, and when returning a fn, its scope is everything above its binding
 
-// should use more RCs
-struct Scope {
-	bindings: Vec<Vec<(Node, usize)>> // id, node, scope level
+use crate::ast::Node;
+
+struct ScopeBinding {
+	ident: usize,
+	depth: usize,
+	node: Node
 }
 
-// on call, record scope
+
+
+struct Scope {
+
+}
 
 impl Scope {
-	pub fn new(max_id: usize) -> Self {
-		Self { bindings: Vec::new() }
-	}
 
-	pub fn push(id: usize, node: Node, level: usize) {
-
-	}
-
-	pub fn fetch(id: usize) {
-
-	}
 }
 
-pub fn evaluate(node: Node) {
+fn reduce_rec(node: Node) -> Node {
+	reduce_rec(node, Scope::new())
+}
+
+fn reduce_rec(node: Node, scope: Scope) -> Node {
+	match node {
+		Node::Func { binding, expr } => {
+
+		},
+		Node::Apply { lhs, rhs} => {
+
+		},
+		Node::Ident(ident) => {
+
+		}
+	}
+
 	todo!()
 }

@@ -1,6 +1,8 @@
-use crate::ast::Node;
-use crate::lexer::{Token, TokenType, Position};
+use std::rc::Rc;
 use std::collections::HashMap;
+
+use crate::ast::{Node, Ast};
+use crate::lexer::{Token, TokenType, Position};
 
 #[derive(Debug)]
 pub enum ParseErrors {
@@ -21,6 +23,7 @@ impl IdentMap {
 			current_index: 0
 		}
 	}
+
 	pub fn get_index(&mut self, ident: &String) -> usize {
 		match self.map.get(ident) {
 			Some(index) => *index,
@@ -34,17 +37,22 @@ impl IdentMap {
 	}
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<Node, ParseErrors> {
+pub fn parse(tokens: Vec<Token>) -> Result<Ast, ParseErrors> {
 	let filtered_tokens: Vec<Token> = tokens.into_iter().filter(|t| { 
 		!matches!(t, Token { token_type: TokenType::Whitespace, ..})
 	}).collect();
 
 	//let mut declarations: Vec<Node> = Vec::new();	
 	
-	let result = parse_function(&filtered_tokens, &mut IdentMap::new());
+
+	let mut ident_map = IdentMap::new();
+	let result = parse_function(&filtered_tokens, &mut ident_map);
 
 	match result {
-		Ok((expr, _)) => Ok(expr),
+		Ok((node, _)) => Ok(Ast {
+			max_ident: ident_map.current_index,
+			node 
+		}),
 		Err(err) => Err(err)
 	}
 }
@@ -59,7 +67,7 @@ fn parse_function<'a>(tokens: &'a[Token], ident_map: &mut IdentMap) -> Result<(N
 			Ok((node, tokens)) => Ok(( 
 					Node::Func { 
 						binding: ident_map.get_index(ident), 
-						expr: Box::new(node) 
+						expr: Rc::new(node) 
 					}, tokens)),
 			expr_result @ Err(_) => expr_result
 		},
@@ -72,8 +80,8 @@ fn parse_call<'a>(lhs: Option<Node>, tokens: &'a[Token], ident_map: &mut IdentMa
 		Some(lhs_node) => match parse_primary(tokens, ident_map) {
 			Ok((rhs_node, tokens)) => parse_call( 
 				Some( Node::Apply {
-					lhs: Box::new(lhs_node), 
-					rhs: Box::new(rhs_node)
+					lhs: Rc::new(lhs_node), 
+					rhs: Rc::new(rhs_node)
 				}), tokens, ident_map),
 			Err(_) => Ok((lhs_node, tokens))
 		} 
