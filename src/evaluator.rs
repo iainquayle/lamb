@@ -11,8 +11,6 @@ struct ScopeBinding {
 	node: Node
 }
 
-
-
 struct Scope {
 
 }
@@ -21,22 +19,17 @@ impl Scope {
 
 }
 
-fn reduce_rec(node: Node) -> Node {
-	reduce_rec(node, Scope::new())
-}
-
 fn reduce_rec(node: Node, scope: Scope) -> Node {
 	match node {
 		Node::Func { binding, expr } => {
 
 		},
-		Node::Apply { lhs, rhs} => {
+		Node::Apply { lhs, rhs } => {
 
 		},
 		Node::Ident(ident) => {
 
 		}
 	}
-
 	todo!()
 }
