@@ -3,7 +3,7 @@ mod ast;
 mod parser;
 mod evaluator;
 
-use lexer::{lex};
+use lexer::lex;
 use parser::parse;
 use evaluator::reduce;
 
@@ -17,10 +17,9 @@ fn main() {
 		Ok(ast) => {
 			println!("{:?}\n", ast);
 
-			let reduced_result = reduce(&ast.node);
-			match reduced_result {
-				Ok((node, _)) => {
-					println!("{:?}\n", node);
+			match reduce(&ast.node) {
+				Ok(closure) => {
+					println!("{:?}\n", closure.node());
 				},
 				Err(err) => {
 					println!("{:?}", err);

@@ -4,39 +4,6 @@ use std::collections::HashMap;
 use crate::ast::{Node, Ast};
 use crate::lexer::{Token, TokenType, Position};
 
-#[derive(Debug)]
-pub enum ParseErrors {
-	NoClosingParen(Position),	
-	NotPrimary(Position),
-	Eof
-}
-
-struct IdentMap {
-	map: HashMap<String, usize>,
-	current_index: usize
-}
-
-impl IdentMap {
-	pub fn new() -> Self {
-		Self {
-			map: HashMap::new(),
-			current_index: 0
-		}
-	}
-
-	pub fn get_index(&mut self, ident: &String) -> usize {
-		match self.map.get(ident) {
-			Some(index) => *index,
-			None => {
-				_ = self.map.insert(ident.clone(), self.current_index);
-				let current_index = self.current_index;
-				self.current_index += 1;
-				current_index
-			}
-		}
-	}
-}
-
 pub fn parse(tokens: Vec<Token>) -> Result<Ast, ParseErrors> {
 	let filtered_tokens: Vec<Token> = tokens.into_iter().filter(|t| { 
 		!matches!(t, Token { token_type: TokenType::Whitespace, ..})
@@ -106,5 +73,38 @@ fn parse_primary<'a>(tokens: &'a[Token], ident_map: &mut IdentMap) -> Result<(No
 			Ok((Node::Ident(ident_map.get_index(ident)), tokens)),
 		[ Token { position, .. }, ..] => Err(ParseErrors::NotPrimary(position.clone())),
 		[] => Err(ParseErrors::Eof)
+	}
+}
+
+#[derive(Debug)]
+pub enum ParseErrors {
+	NoClosingParen(Position),	
+	NotPrimary(Position),
+	Eof
+}
+
+struct IdentMap {
+	map: HashMap<String, usize>,
+	current_index: usize
+}
+
+impl IdentMap {
+	pub fn new() -> Self {
+		Self {
+			map: HashMap::new(),
+			current_index: 0
+		}
+	}
+
+	pub fn get_index(&mut self, ident: &String) -> usize {
+		match self.map.get(ident) {
+			Some(index) => *index,
+			None => {
+				_ = self.map.insert(ident.clone(), self.current_index);
+				let current_index = self.current_index;
+				self.current_index += 1;
+				current_index
+			}
+		}
 	}
 }

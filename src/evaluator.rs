@@ -2,29 +2,29 @@ use std::rc::Rc;
 
 use crate::ast::Node;
 
-pub fn reduce(node: &Node) -> Result<(Node, Scope), ReduceErr> {
-	reduce_rec(node, &Scope::new())
+pub fn reduce(node: &Node) -> Result<LazyClosure, ReduceErr> {
+	reduce_rec(Rc::new(node.clone()), &Scope::new())
 }
 
-fn reduce_rec(node: &Node, scope: &Scope) -> Result<(Node, Scope), ReduceErr> {
-	match node {
+fn reduce_rec(node: Rc<Node>, scope: &Scope) -> Result<LazyClosure, ReduceErr> {
+	match node.as_ref() {
 		Node::Apply { lhs, rhs } => {
-			let (reduced_lhs, reduced_scope) = reduce_rec(lhs, &scope)?;
-			match reduced_lhs {
+			let lhs_closure = reduce_rec(lhs.clone(), &scope)?;
+			match lhs_closure.node.as_ref() {
 				Node::Func { binding, expr } => {
-					reduce_rec(&expr, &reduced_scope.add(binding, rhs, scope))
+					reduce_rec(expr.clone(), &lhs_closure.scope.add(*binding, LazyClosure::new(rhs.clone(), scope.clone())))
 				},
 				_ => Err(ReduceErr::NotFunc)
 			}
 
 		},
 		Node::Func {..} => {
-			Ok((node.clone(), scope.clone()))
+			Ok(LazyClosure::new(node.clone(), scope.clone()))
 		},
 		Node::Ident(ident) => {
 			match scope.get(*ident) {
 				None => Err(ReduceErr::UnknownIdent),
-				Some((node, scope)) => Ok((node.clone(), scope))
+				Some(closure) => Ok(closure)
 			}
 		}
 	}
@@ -43,24 +43,23 @@ pub struct Scope {
 
 impl Scope {
 	pub fn new() -> Self {
-		Scope {
+		Self {
 			binding: None
 		}
 	}
 
-	pub fn get(&self, ident: usize) -> Option<(Node, Scope)> {
+	pub fn get(&self, ident: usize) -> Option<LazyClosure> {
 		match &self.binding {
 			Some(binding) => binding.get(ident),
 			None => None
 		}
 	}
 
-	pub fn add(&self, ident: usize, node: &Node, scope: &Scope) -> Self {
+	pub fn add(&self, ident: usize, closure: LazyClosure) -> Self {
 		Scope {
 			binding: Some(Rc::new(ScopeBinding {
-				ident: ident,
-				node: node.clone(),
-				scope: scope.clone(),
+				ident,
+				closure,
 				prior: self.binding.clone()
 			}))
 		}	
@@ -70,15 +69,14 @@ impl Scope {
 #[derive(Clone, Debug)]
 struct ScopeBinding {
 	ident: usize,
-	node: Node,
-	scope: Scope,
+	closure: LazyClosure,
 	prior: Option<Rc<ScopeBinding>>
 }
 
 impl ScopeBinding {
-	pub fn get(&self, ident: usize) -> Option<(Node, Scope)> {
+	pub fn get(&self, ident: usize) -> Option<LazyClosure> {
 		if self.ident == ident {
-			Some((self.node.clone(), self.scope.clone()))
+			Some(self.closure.clone())
 		} else {
 			match &self.prior {
 				Some(binding) => binding.get(ident),
@@ -87,3 +85,22 @@ impl ScopeBinding {
 		}
 	}
 }
+
+#[derive(Debug, Clone)]
+pub struct LazyClosure {
+	node: Rc<Node>,
+	scope: Scope,
+}
+
+impl LazyClosure {
+	pub fn new(node: Rc<Node>, scope: Scope) -> Self {
+		Self {
+			node,
+			scope,
+		}
+	}
+
+	pub fn node(&self) -> Rc<Node> { self.node.clone() }
+	// pub fn scope(&self) -> Scope { self.scope.clone() }
+}
+
