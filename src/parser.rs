@@ -1,7 +1,6 @@
 use std::rc::Rc;
-use std::collections::HashMap;
 
-use crate::ast::{Node, Ast};
+use crate::ast::{Node, Ast, IdentMap};
 use crate::lexer::{Token, TokenType, Position};
 
 pub fn parse(tokens: Vec<Token>) -> Result<Ast, ParseErrors> {
@@ -83,28 +82,3 @@ pub enum ParseErrors {
 	Eof
 }
 
-struct IdentMap {
-	map: HashMap<String, usize>,
-	current_index: usize
-}
-
-impl IdentMap {
-	pub fn new() -> Self {
-		Self {
-			map: HashMap::new(),
-			current_index: 0
-		}
-	}
-
-	pub fn get_index(&mut self, ident: &String) -> usize {
-		match self.map.get(ident) {
-			Some(index) => *index,
-			None => {
-				_ = self.map.insert(ident.clone(), self.current_index);
-				let current_index = self.current_index;
-				self.current_index += 1;
-				current_index
-			}
-		}
-	}
-}

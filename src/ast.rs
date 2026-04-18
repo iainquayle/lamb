@@ -1,8 +1,11 @@
-// perhaps change this such that it can immediately start being used for eval?
-// would likely want to move to rcs, and if wanting to use tracked scope, have a scope attachment
-// to fns?
-
 use std::rc::Rc;
+use std::collections::HashMap;
+
+#[derive(Debug, Clone)]
+pub struct Ast {
+	pub map: IdentMap,
+	pub node: Node
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
@@ -11,8 +14,40 @@ pub enum Node {
 	Ident(usize)
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Ast {
-	pub max_ident: usize,
-	pub node: Node
+#[derive(Clone, Debug)]
+pub struct IdentMap {
+	map: HashMap<String, usize>,
+	reverse_map: HashMap<usize, String>,
+	current_index: usize
+}
+
+impl IdentMap {
+	pub fn new() -> Self {
+		Self {
+			map: HashMap::new(),
+			reverse_map: HashMap::new(),
+			current_index: 0
+		}
+	}
+
+	pub fn get_index(&mut self, ident: &String) -> usize {
+		match self.map.get(ident) {
+			Some(index) => *index,
+			None => {
+				_ = self.map.insert(ident.clone(), self.current_index);
+				_ = self.reverse_map.insert(self.current_index, ident.clone());
+				let current_index = self.current_index;
+				self.current_index += 1;
+				current_index
+			}
+		}
+	}
+
+	pub fn get_ident(&self, index: usize) -> Option<&String> {
+		self.reverse_map.get(&index)
+	}
+
+	pub fn len(&self) -> usize {
+		self.map.len()
+	} 
 }
