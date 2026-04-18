@@ -5,12 +5,28 @@ mod evaluator;
 
 use lexer::{lex};
 use parser::parse;
+use evaluator::reduce;
 
 fn main() {
-	let src = String::from("(x -> y -> x ( x y ) y)");
+	let src = String::from("(t -> f -> t) (x -> x) (y -> y)");
 	let tokens = lex(src);
-	println!("{:?}", tokens);
+	println!("{:?}\n", tokens);
 
-	let ast = parse(tokens);
-	println!("{:?}", ast);
+	let parse_result = parse(tokens);
+	match parse_result {
+		Ok(ast) => {
+			println!("{:?}\n", ast);
+
+			let reduced_result = reduce(&ast.node);
+			match reduced_result {
+				Ok((node, _)) => {
+					println!("{:?}\n", node);
+				},
+				Err(err) => {
+					println!("{:?}", err);
+				}
+			}
+		},
+		Err(err) => println!("failed to parse {:?}", err)
+	}
 }
