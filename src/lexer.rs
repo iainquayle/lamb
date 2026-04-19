@@ -2,23 +2,6 @@ use std::str::Chars;
 use std::iter::Enumerate;
 
 #[derive(Debug, Clone)]
-pub struct Position {
-	pub index: usize
-}
-
-#[derive(Debug, Clone)]
-pub enum TokenType {
-	Ident(String),
-	ParenOpen,
-	ParenClose,
-	Assign,
-	//Eval,
-	Arrow,
-	Whitespace,
-	Unknown,
-}
-
-#[derive(Debug, Clone)]
 pub struct Token {
 	pub position: Position,
 	pub token_type: TokenType,	
@@ -32,8 +15,6 @@ impl Token {
 		}
 	}
 }
-
-type SrcIter<'a> = Enumerate<Chars<'a>>;
 
 macro_rules! ident_pattern {
 	() => {
@@ -132,3 +113,23 @@ pub fn lex(src: String) -> Vec<Token> {
 
 	tokens
 }
+
+#[derive(Debug, Clone)]
+pub struct Position {
+	pub index: usize
+}
+
+#[derive(Debug, Clone)]
+pub enum TokenType {
+	Ident(String),
+	ParenOpen,
+	ParenClose,
+	Assign,
+	//Eval,
+	Arrow,
+	Whitespace,
+	Unknown,
+}
+
+type SrcIter<'a> = Enumerate<Chars<'a>>;
+

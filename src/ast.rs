@@ -9,9 +9,40 @@ pub struct Ast {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
-	Func { binding: usize, expr: Rc<Node> },
-	Apply { lhs: Rc<Node>, rhs: Rc<Node> },
+	Func { binding: usize, expr: Rc<Self> },
+	Apply { lhs: Rc<Self>, rhs: Rc<Self> },
 	Ident(usize)
+}
+
+impl Node {
+	pub fn format_with_map(&self, map: &IdentMap, depth: usize) -> String {
+		let next_depth = depth + 1;
+		match self {
+			Self::Func { binding, expr} => {
+				let front_pad = "\t".repeat(depth);
+				let mut binding_str = try_stringify_ident(&map, *binding);
+				binding_str.push_str(" ->\n");
+				let binding_line = front_pad + &binding_str;
+				let remainder = expr.format_with_map(map, next_depth);
+				binding_line + &remainder
+			},
+			// will need parens in here
+			Self::Apply { lhs, rhs} => {
+				
+				lhs.format_with_map(map, next_depth) 
+				+ &"\n"
+				+ &rhs.format_with_map(map, next_depth)
+			},
+			Self::Ident(ident) => {
+				let front_pad = "\t".repeat(depth);
+				front_pad + &try_stringify_ident(&map, *ident)
+			}
+		}
+	}
+}
+
+fn try_stringify_ident(map: &IdentMap, index: usize) -> String {
+	map.get_ident(index).map_or(format!("Missing: {}", index), |ident| ident.to_string())
 }
 
 #[derive(Clone, Debug)]
@@ -45,6 +76,10 @@ impl IdentMap {
 
 	pub fn get_ident(&self, index: usize) -> Option<&String> {
 		self.reverse_map.get(&index)
+	}
+
+	pub fn current_index(&self) -> usize {
+		self.current_index
 	}
 
 	pub fn len(&self) -> usize {

@@ -16,7 +16,7 @@ pub fn parse(tokens: Vec<Token>) -> Result<Ast, ParseErrors> {
 
 	match result {
 		Ok((node, _)) => Ok(Ast {
-			max_ident: ident_map.current_index,
+			map: ident_map,
 			node 
 		}),
 		Err(err) => Err(err)

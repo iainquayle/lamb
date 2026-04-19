@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::ast::Node;
 
+// this could be attached to Node?
 pub fn reduce(node: &Node) -> Result<LazyClosure, ReduceErr> {
 	reduce_rec(Rc::new(node.clone()), &Scope::new())
 }
@@ -56,7 +57,7 @@ impl Scope {
 	}
 
 	pub fn add(&self, ident: usize, closure: LazyClosure) -> Self {
-		Scope {
+		Self {
 			binding: Some(Rc::new(ScopeBinding {
 				ident,
 				closure,
@@ -70,7 +71,7 @@ impl Scope {
 struct ScopeBinding {
 	ident: usize,
 	closure: LazyClosure,
-	prior: Option<Rc<ScopeBinding>>
+	prior: Option<Rc<Self>>
 }
 
 impl ScopeBinding {
