@@ -8,7 +8,7 @@ use parser::parse;
 use evaluator::reduce;
 
 fn main() {
-	//let src = String::from("(t -> f -> t) (x -> x) (y -> y)");
+	// let src = String::from("(t -> f -> t) (x -> x) (y -> y)");
 	let src = String::from(include_str!("../examples/bool.lamb"));
 	let tokens = lex(src);
 	println!("{:?}\n", tokens);
@@ -16,6 +16,7 @@ fn main() {
 	match parse_result {
 		Ok(ast) => {
 			println!("{:?}\n", ast);
+			println!("{}\n", ast.node.format_with_map(&ast.map, 0));
 			match reduce(&ast.node) {
 				Ok(closure) => {
 					println!("{:?}\n", closure.node());

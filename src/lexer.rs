@@ -3,15 +3,15 @@ use std::iter::Enumerate;
 
 #[derive(Debug, Clone)]
 pub struct Token {
-	pub position: Position,
 	pub token_type: TokenType,	
+	pub position: Position,
 }
 
 impl Token {
-	pub fn new(index: usize, token_type: TokenType) -> Token {
+	pub fn new(token_type: TokenType, position: Position) -> Token {
 		Token {
-			position: Position { index },
-			token_type
+			token_type,
+			position,
 		}
 	}
 }
@@ -28,85 +28,49 @@ macro_rules! whitespace_pattern {
 	};
 }
 
-fn fold_while<Acc, Fold>(src_iter: SrcIter, acc: Acc, fold: Fold) -> (Acc, usize, SrcIter)
-	where
-		Fold: Fn(&Acc, char) -> Option<Acc>
-{ 
-	let mut current_iter = src_iter.clone();
-	let mut previous_iter = src_iter.clone();
-	let mut found = true;
-	let mut current_acc = acc;
-	let mut index = 0;
-	while let Some((i, c)) = current_iter.next() && found {
-		match fold(&current_acc, c) {
-			Some(acc) => { current_acc = acc; previous_iter = current_iter.clone(); },
-			None => { index = i - 1; found = false; }
-		}
-	}
-	(current_acc, index, previous_iter)
-}
-
-fn for_ident(src_iter: SrcIter) -> (String, usize, SrcIter) {
-	fold_while(src_iter, String::new(), | acc, c | {
-		match c {
-			ident_pattern!() => Some(acc.clone() + &c.to_string()),
-			_ => None 
-		}
-	})
-}
-
-fn for_whitespace(src_iter: SrcIter) -> (usize, SrcIter) {
-	let (_, index, iter) = fold_while(src_iter, (), | _, c | {
-		match c {
-			whitespace_pattern!() => Some(()),
-			_ => None 
-		}
-	});
-	(index, iter)
-}
-
-/*
- * !!!!!!!
- * change this so that it just stores the starting index? would be easier
- *
- */
-
 pub fn lex(src: String) -> Vec<Token> {
 	let mut tokens = Vec::new();
 	let mut src_iter = src.chars().enumerate();
 
-	while let Some((i, c)) = src_iter.next() {
+	let mut current_position = Position::new();
+	let mut prev_position = Position::new();
+
+	while let Some((_, c)) = src_iter.next() {
 		let current_iter = src_iter.clone();
+		current_position.increment(c);
 		let (token, new_iter) = match c {
 			whitespace_pattern!() => {
-				let (index, new_iter) = for_whitespace(current_iter);
-				if index == 0 {
-					(Token::new(index, TokenType::Whitespace), new_iter)
-				} else {
-					(Token::new(i, TokenType::Whitespace), new_iter)
-				}
+				let (new_iter, position) = for_whitespace(current_iter, current_position.clone());
+				current_position = position;
+				(Token::new(TokenType::Whitespace, prev_position), new_iter)
 			},
 			'-' => {
 				let mut arrow_iter = current_iter.clone();
 				match arrow_iter.next() {
-					Some((i, '>')) => (Token::new(i, TokenType::Arrow), arrow_iter),
+					Some((_, '>')) => { 
+						current_position.increment('>');
+						(Token::new(TokenType::Arrow, prev_position), arrow_iter) 
+					},
 					_ => {
-						let (ident_tail, index, new_iter) = for_ident(current_iter);
-						let ident = String::from(c) + ident_tail.as_str();
-						(Token::new(index, TokenType::Ident(ident)), new_iter)
+						let (ident_tail, new_iter, position) = for_ident(current_iter, current_position.clone());
+						current_position = position;
+						let ident = String::from(c) + &ident_tail;
+						(Token::new(TokenType::Ident(ident), prev_position), new_iter)
 					}
 				}
 			},
-			'=' => (Token::new(i, TokenType::Assign), current_iter),
-			'(' => (Token::new(i, TokenType::ParenOpen), current_iter),
-			')' => (Token::new(i, TokenType::ParenClose), current_iter),
+			'=' => (Token::new(TokenType::Assign, prev_position), current_iter),
+			'(' => (Token::new(TokenType::ParenOpen, prev_position), current_iter),
+			')' => (Token::new(TokenType::ParenClose, prev_position), current_iter),
 			ident_pattern!() => {
-				let (ident_tail, index, new_iter) = for_ident(current_iter);
-				let ident = String::from(c) + ident_tail.as_str();
-				(Token::new(index, TokenType::Ident(ident)), new_iter)
+				let (ident_tail, new_iter, position) = for_ident(current_iter, current_position.clone());
+				current_position = position;
+				let ident = String::from(c) + &ident_tail;
+				(Token::new(TokenType::Ident(ident), prev_position), new_iter)
 			},
-			_ => (Token::new(i, TokenType::Unknown), current_iter)
+			_ => (Token::new(TokenType::Unknown, prev_position), current_iter)
 		};
+		prev_position = current_position.clone();
 		src_iter = new_iter;
 		tokens.push(token);
 	}
@@ -116,7 +80,33 @@ pub fn lex(src: String) -> Vec<Token> {
 
 #[derive(Debug, Clone)]
 pub struct Position {
-	pub index: usize
+	pub index: usize,
+	pub line: usize,
+	pub col: usize
+}
+
+impl Position {
+	pub fn new() -> Self {
+		Self {
+			index: 0, 
+			line: 0, 
+			col: 0
+		}
+	}
+
+	pub fn increment(&mut self, c: char) {
+		match c {
+			'\n' | '\r' => {
+				self.index += 1;
+				self.line += 1;
+				self.col = 0;
+			},
+			_ => {
+				self.index += 1;
+				self.col += 1;
+			}
+		};
+	}
 }
 
 #[derive(Debug, Clone)]
@@ -132,4 +122,45 @@ pub enum TokenType {
 }
 
 type SrcIter<'a> = Enumerate<Chars<'a>>;
+
+fn fold_while<Acc, Fold>(src_iter: SrcIter, acc: Acc, position: Position, fold: Fold) -> (Acc, SrcIter, Position)
+	where
+		Fold: Fn(&Acc, char) -> Option<Acc>
+{ 
+	let mut current_position = position;
+	let mut current_iter = src_iter.clone();
+	let mut previous_iter = src_iter.clone();
+	let mut found = true;
+	let mut current_acc = acc;
+	while let Some((_, c)) = current_iter.next() && found {
+		match fold(&current_acc, c) {
+			Some(acc) => { 
+				current_acc = acc; 
+				previous_iter = current_iter.clone(); 
+				current_position.increment(c);	
+			},
+			None => { found = false; }
+		}
+	}
+	(current_acc, previous_iter, current_position)
+}
+
+fn for_ident(src_iter: SrcIter, position: Position) -> (String, SrcIter, Position) {
+	fold_while(src_iter, String::new(), position,| acc, c | {
+		match c {
+			ident_pattern!() => Some(acc.clone() + &c.to_string()),
+			_ => None 
+		}
+	})
+}
+
+fn for_whitespace(src_iter: SrcIter, position: Position) -> (SrcIter, Position) {
+	let (_, iter, position) = fold_while(src_iter, (), position,| _, c | {
+		match c {
+			whitespace_pattern!() => Some(()),
+			_ => None 
+		}
+	});
+	(iter, position)
+}
 

@@ -1,6 +1,6 @@
-t -> f -> (
-	t (x -> x) (y -> y)
+(true -> false -> 
+	(and -> and)
+	(b1 -> b2 -> b1 b2 false)
 )
 (t -> f -> t)
 (t -> f -> f)
-
