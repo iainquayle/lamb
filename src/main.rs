@@ -19,6 +19,7 @@ fn main() {
 			match reduce(&ast.node) {
 				Ok(closure) => {
 					println!("{:?}\n", closure.node());
+					println!("{}\n", closure.node().format_with_map(&ast.map, 0));
 				},
 				Err(err) => {
 					println!("{:?}", err);

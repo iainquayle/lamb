@@ -19,7 +19,7 @@ impl Node {
 		let next_depth = depth + 1;
 		match self {
 			Self::Func { binding, expr} => {
-				let front_pad = "\t".repeat(depth);
+				let front_pad = "  ".repeat(depth);
 				let mut binding_str = try_stringify_ident(&map, *binding);
 				binding_str.push_str(" ->\n");
 				let binding_line = front_pad + &binding_str;
@@ -34,7 +34,7 @@ impl Node {
 				+ &rhs.format_with_map(map, next_depth)
 			},
 			Self::Ident(ident) => {
-				let front_pad = "\t".repeat(depth);
+				let front_pad = "  ".repeat(depth);
 				front_pad + &try_stringify_ident(&map, *ident)
 			}
 		}
