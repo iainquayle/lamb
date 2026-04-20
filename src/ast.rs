@@ -78,12 +78,4 @@ impl IdentMap {
 	pub fn get_ident(&self, index: usize) -> Option<&String> {
 		self.reverse_map.get(&index)
 	}
-
-	pub fn current_index(&self) -> usize {
-		self.current_index
-	}
-
-	pub fn len(&self) -> usize {
-		self.map.len()
-	} 
 }

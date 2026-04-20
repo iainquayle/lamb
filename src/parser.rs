@@ -4,22 +4,25 @@ use crate::ast::{Node, Ast, IdentMap};
 use crate::lexer::{Token, TokenType, Position};
 
 pub fn parse(tokens: Vec<Token>) -> Result<Ast, ParseErrors> {
-	let filtered_tokens: Vec<Token> = tokens.into_iter().filter(|t| { 
-		!matches!(t, Token { token_type: TokenType::Whitespace, ..})
-	}).collect();
-
-	//let mut declarations: Vec<Node> = Vec::new();	
-	
-
-	let mut ident_map = IdentMap::new();
-	let result = parse_function(&filtered_tokens, &mut ident_map);
-
-	match result {
-		Ok((node, _)) => Ok(Ast {
-			map: ident_map,
-			node 
-		}),
-		Err(err) => Err(err)
+	let unknown = tokens.clone().into_iter().find(|t| {
+		matches!(t, Token {token_type: TokenType::Unknown, ..})
+	});
+	match unknown {
+		Some(token) => Err(ParseErrors::ContainsUnknown(token.position)),
+		None => {
+			let no_whitespace_tokens: Vec<Token> = tokens.into_iter().filter(|t| { 
+				!matches!(t, Token { token_type: TokenType::Whitespace, ..})
+			}).collect();
+			let mut ident_map = IdentMap::new();
+			let result = parse_function(&no_whitespace_tokens, &mut ident_map);
+			match result {
+				Ok((node, _)) => Ok(Ast {
+					map: ident_map,
+					node 
+				}),
+				Err(err) => Err(err)
+			}
+		}
 	}
 }
 
@@ -77,8 +80,12 @@ fn parse_primary<'a>(tokens: &'a[Token], ident_map: &mut IdentMap) -> Result<(No
 
 #[derive(Debug)]
 pub enum ParseErrors {
+	#[allow(dead_code)]
 	NoClosingParen(Position),	
+	#[allow(dead_code)]
 	NotPrimary(Position),
+	#[allow(dead_code)]
+	ContainsUnknown(Position),	
 	Eof
 }
 
