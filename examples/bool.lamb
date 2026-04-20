@@ -1,7 +1,7 @@
 (true -> false -> (
 	(b1 -> b2 -> b1 b2 false) 
-	false 
-	true
+	true 
+	true	
 ))
 (t -> f -> t)
 (t -> f -> f)

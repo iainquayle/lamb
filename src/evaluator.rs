@@ -7,9 +7,31 @@ pub fn reduce(node: &Node) -> Result<LazyClosure, ReduceErr> {
 	reduce_rec(Rc::new(node.clone()), &Scope::new())
 }
 
+#[derive(Debug, Clone)]
+pub struct LazyClosure {
+	node: Rc<Node>,
+	scope: Scope,
+}
+
+impl LazyClosure {
+	pub fn new(node: Rc<Node>, scope: Scope) -> Self {
+		Self {
+			node,
+			scope,
+		}
+	}
+
+	pub fn node(&self) -> Rc<Node> { self.node.clone() }
+	pub fn scope(&self) -> Scope { self.scope.clone() }
+}
+
+// reduce should be implemented on lazy closures?
 fn reduce_rec(node: Rc<Node>, scope: &Scope) -> Result<LazyClosure, ReduceErr> {
 	match node.as_ref() {
 		Node::Apply { lhs, rhs } => {
+			// technially reduce rec can return something else if it hits an ident that maps to
+			// something that isnt a func?
+			// may be that reduce ident should actually reduce rather than be lazy
 			let lhs_closure = reduce_rec(lhs.clone(), &scope)?;
 			match lhs_closure.node.as_ref() {
 				Node::Func { binding, expr } => {
@@ -25,7 +47,7 @@ fn reduce_rec(node: Rc<Node>, scope: &Scope) -> Result<LazyClosure, ReduceErr> {
 		Node::Ident(ident) => {
 			match scope.get(*ident) {
 				None => Err(ReduceErr::UnknownIdent),
-				Some(closure) => Ok(closure)
+				Some(closure) => reduce_rec(closure.node(), &closure.scope())
 			}
 		}
 	}
@@ -85,23 +107,5 @@ impl ScopeBinding {
 			}
 		}
 	}
-}
-
-#[derive(Debug, Clone)]
-pub struct LazyClosure {
-	node: Rc<Node>,
-	scope: Scope,
-}
-
-impl LazyClosure {
-	pub fn new(node: Rc<Node>, scope: Scope) -> Self {
-		Self {
-			node,
-			scope,
-		}
-	}
-
-	pub fn node(&self) -> Rc<Node> { self.node.clone() }
-	// pub fn scope(&self) -> Scope { self.scope.clone() }
 }
 

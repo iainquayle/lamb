@@ -7,6 +7,8 @@ pub struct Ast {
 	pub node: Node
 }
 
+// the rcs should be moved to boxes, and then during walking structs referncing them should just use
+// borrowed values
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
 	Func { binding: usize, expr: Rc<Self> },
@@ -28,7 +30,6 @@ impl Node {
 			},
 			// will need parens in here
 			Self::Apply { lhs, rhs} => {
-				
 				lhs.format_with_map(map, next_depth) 
 				+ &"\n"
 				+ &rhs.format_with_map(map, next_depth)
