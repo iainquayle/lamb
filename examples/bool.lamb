@@ -1,7 +1,10 @@
 (true -> false -> (
+	(and -> or -> not -> (
+		not (or false false)
+	))
 	(b1 -> b2 -> b1 b2 false) 
-	true 
-	true	
+	(b1 -> b2 -> b1 true b2) 
+	(bool -> bool false true)
 ))
 (t -> f -> t)
 (t -> f -> f)
