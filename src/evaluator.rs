@@ -2,30 +2,64 @@ use std::rc::Rc;
 
 use crate::ast::Node;
 
-// this could be attached to Node?
-pub fn reduce(node: &Node) -> Result<LazyClosure, ReduceErr> {
-	reduce_rec(Rc::new(node.clone()), &Scope::new())
-}
-
 #[derive(Debug, Clone)]
-pub struct LazyClosure {
-	node: Rc<Node>,
+pub struct LazyClosure<'a> {
+	node: &'a Node,
 	scope: Scope,
 }
 
-impl LazyClosure {
-	pub fn new(node: Rc<Node>, scope: Scope) -> Self {
+impl<'a> LazyClosure<'a> {
+	pub fn new(node: &'a Node) -> LazyClosure<'a> {
+		Self {
+			node,
+			scope: Scope::new(),
+		}
+	}
+
+	pub fn new_with_scope(node: &'a Node, scope: Scope) -> LazyClosure<'a> {
 		Self {
 			node,
 			scope,
 		}
 	}
 
-	pub fn node(&self) -> Rc<Node> { self.node.clone() }
+	pub fn node(&self) -> &Node { self.node }
 	pub fn scope(&self) -> Scope { self.scope.clone() }
+
+	pub fn reduce(&self) -> Result<LazyClosure, ReduceErr> {
+		match self.node {
+			Node::Apply { lhs, rhs } => {
+				let lhs_closure = LazyClosure::new_with_scope(lhs, self.scope.clone()).reduce()?;
+				match lhs_closure.node {
+					Node::Func { binding, expr } => LazyClosure::new_with_scope(
+						expr,
+						lhs_closure.scope.add(
+							*binding,
+							LazyClosure::new_with_scope(rhs, self.scope.clone())
+						)
+					).reduce(),
+					_ => Err(ReduceErr::NotFunc)
+				}
+
+			},
+			Node::Func {..} => {
+				Ok(LazyClosure::new_with_scope(node.clone(), scope.clone()))
+			},
+			Node::Ident(ident) => {
+				match scope.get(*ident) {
+					None => Err(ReduceErr::UnknownIdent),
+					Some(closure) => reduce_rec(closure.node(), &closure.scope())
+				}
+			}
+		}
+	}
 }
 
-// reduce should be implemented on lazy closures?
+// this could be attached to Node?
+pub fn reduce(node: &Node) -> Result<LazyClosure, ReduceErr> {
+	reduce_rec(Rc::new(node.clone()), &Scope::new())
+}
+
 fn reduce_rec(node: Rc<Node>, scope: &Scope) -> Result<LazyClosure, ReduceErr> {
 	match node.as_ref() {
 		Node::Apply { lhs, rhs } => {
@@ -35,14 +69,19 @@ fn reduce_rec(node: Rc<Node>, scope: &Scope) -> Result<LazyClosure, ReduceErr> {
 			let lhs_closure = reduce_rec(lhs.clone(), &scope)?;
 			match lhs_closure.node.as_ref() {
 				Node::Func { binding, expr } => {
-					reduce_rec(expr.clone(), &lhs_closure.scope.add(*binding, LazyClosure::new(rhs.clone(), scope.clone())))
+					reduce_rec(
+						expr.clone(), 
+						&lhs_closure.scope.add(
+							*binding, 
+							LazyClosure::new_with_scope(rhs.clone(), scope.clone())
+					))
 				},
 				_ => Err(ReduceErr::NotFunc)
 			}
 
 		},
 		Node::Func {..} => {
-			Ok(LazyClosure::new(node.clone(), scope.clone()))
+			Ok(LazyClosure::new_with_scope(node.clone(), scope.clone()))
 		},
 		Node::Ident(ident) => {
 			match scope.get(*ident) {

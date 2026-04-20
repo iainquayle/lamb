@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -11,8 +10,8 @@ pub struct Ast {
 // borrowed values
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
-	Func { binding: usize, expr: Rc<Self> },
-	Apply { lhs: Rc<Self>, rhs: Rc<Self> },
+	Func { binding: usize, expr: Box<Self> },
+	Apply { lhs: Box<Self>, rhs: Box<Self> },
 	Ident(usize)
 }
 
@@ -28,7 +27,6 @@ impl Node {
 				let remainder = expr.format_with_map(map, next_depth);
 				binding_line + &remainder
 			},
-			// will need parens in here
 			Self::Apply { lhs, rhs} => {
 				lhs.format_with_map(map, next_depth) 
 				+ &"\n"

@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::ast::{Node, Ast, IdentMap};
 use crate::lexer::{Token, TokenType, Position};
 
@@ -36,7 +34,7 @@ fn parse_function<'a>(tokens: &'a[Token], ident_map: &mut IdentMap) -> Result<(N
 			Ok((node, tokens)) => Ok(( 
 					Node::Func { 
 						binding: ident_map.get_index(ident), 
-						expr: Rc::new(node) 
+						expr: Box::new(node) 
 					}, tokens)),
 			expr_result @ Err(_) => expr_result
 		},
@@ -49,8 +47,8 @@ fn parse_call<'a>(lhs: Option<Node>, tokens: &'a[Token], ident_map: &mut IdentMa
 		Some(lhs_node) => match parse_primary(tokens, ident_map) {
 			Ok((rhs_node, tokens)) => parse_call( 
 				Some( Node::Apply {
-					lhs: Rc::new(lhs_node), 
-					rhs: Rc::new(rhs_node)
+					lhs: Box::new(lhs_node), 
+					rhs: Box::new(rhs_node)
 				}), tokens, ident_map),
 			Err(_) => Ok((lhs_node, tokens))
 		} 
