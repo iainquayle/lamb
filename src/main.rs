@@ -5,7 +5,7 @@ mod evaluator;
 
 use lexer::lex;
 use parser::parse;
-use evaluator::reduce;
+use evaluator::LazyClosure;
 
 fn main() {
 	// let src = String::from("(t -> f -> t) (x -> x) (y -> y)");
@@ -17,7 +17,7 @@ fn main() {
 		Ok(ast) => {
 			println!("{:?}\n", ast);
 			println!("{}\n", ast.node.format_with_map(&ast.map, 0));
-			match reduce(&ast.node) {
+			match LazyClosure::new(&ast.node).reduce() {
 				Ok(closure) => {
 					println!("{:?}\n", closure.node());
 					println!("{}\n", closure.node().format_with_map(&ast.map, 0));
