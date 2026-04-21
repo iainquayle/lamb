@@ -1,5 +1,3 @@
-# Lambda
+# Lamb
 
-As the name implies, a lambda evaluator.
-
-Written by hand for fun.
+A lambda evaluator, written by hand, for fun.
