@@ -1,11 +1,11 @@
 mod lexer;
 mod ast;
 mod parser;
-mod evaluator;
+mod reducer;
 
 use lexer::lex;
 use parser::parse;
-use evaluator::LazyClosure;
+use reducer::LazyClosure;
 
 fn main() {
 	// let src = String::from("(t -> f -> t) (x -> x) (y -> y)");

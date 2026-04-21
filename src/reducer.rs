@@ -38,8 +38,7 @@ impl<'a> LazyClosure<'a> {
 						lhs_closure.scope.add(
 							*binding,
 							LazyClosure::new_with_scope(rhs, self.scope.clone())
-						)
-					).reduce(),
+					)).reduce(),
 					_ => Err(ReduceErr::NotFunc)
 				}
 			},
