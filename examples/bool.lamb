@@ -1,10 +1,15 @@
-(true -> false -> (
-	(and -> or -> not -> (
-		not (or false false)
-	))
+(true -> false -> 
+	(not -> and -> or -> xor -> 
+		(elem -> end ->
+			(elem true (elem true end elem) elem) not
+		)
+		(data -> next -> elem -> fn -> elem (fn data) fn elem)
+		(end -> fn -> end)
+	)
+	(b -> b false true)
 	(b1 -> b2 -> b1 b2 false) 
 	(b1 -> b2 -> b1 true b2) 
-	(bool -> bool false true)
-))
+	(b1 -> b2 -> b1 (b2 false true) b2) 
+)
 (t -> f -> t)
 (t -> f -> f)

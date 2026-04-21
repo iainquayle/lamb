@@ -8,7 +8,6 @@ use parser::parse;
 use reducer::LazyClosure;
 
 fn main() {
-	// let src = String::from("(t -> f -> t) (x -> x) (y -> y)");
 	let src = String::from(include_str!("../examples/bool.lamb"));
 	let tokens = lex(src);
 	println!("{:?}\n", tokens);
@@ -20,6 +19,7 @@ fn main() {
 			match LazyClosure::new(&ast.node).reduce() {
 				Ok(closure) => {
 					println!("{:?}\n", closure.node());
+					println!("{:?}\n", closure.scope());
 					println!("{}\n", closure.node().format_with_map(&ast.map, 0));
 				},
 				Err(err) => {
