@@ -89,8 +89,6 @@ impl<'a> LazyClosure<'a> {
 				front_pad + &try_stringify_ident(&map, *ident)
 			}
 		}
-		
-		todo!()
 	}
 }
 
