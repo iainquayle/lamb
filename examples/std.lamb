@@ -1,15 +1,14 @@
 (true -> false -> 
-	(not -> and -> or -> xor -> 
-		(elem -> end ->
-			(elem true (elem true end elem) elem) not
-		)
-		(data -> next -> elem -> fn -> elem (fn data) fn elem)
-		(end -> fn -> end)
+	(not -> and -> or -> xor -> some -> none -> tuple_2 ->
+		(some (tuple_2 true (some (tuple_2 false none))))
 	)
 	(b -> b false true)
 	(b1 -> b2 -> b1 b2 false) 
 	(b1 -> b2 -> b1 true b2) 
 	(b1 -> b2 -> b1 (b2 false true) b2) 
+	(value -> on_some -> on_none -> on_some value)
+	(on_some -> on_none -> on_none)
+	(v1 -> v2 -> fn -> fn v1 v2)
 )
 (t -> f -> t)
 (t -> f -> f)

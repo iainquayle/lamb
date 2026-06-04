@@ -20,7 +20,7 @@ fn main() {
 				Ok(closure) => {
 					println!("{:?}\n", closure.node());
 					println!("{:?}\n", closure.scope());
-					println!("{}\n", closure.node().format_with_map(&ast.map, 0));
+					println!("{}\n", closure.format_with_map(&ast.map, 0, 10));
 				},
 				Err(err) => {
 					println!("{:?}", err);
