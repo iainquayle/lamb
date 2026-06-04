@@ -8,7 +8,7 @@ use parser::parse;
 use reducer::LazyClosure;
 
 fn main() {
-	let src = String::from(include_str!("../examples/bool.lamb"));
+	let src = String::from(include_str!("../examples/std.lamb"));
 	let tokens = lex(src);
 	println!("{:?}\n", tokens);
 	let parse_result = parse(tokens);
