@@ -1,17 +1,19 @@
 (true -> false -> some -> none -> tuple -> combinator ->
-	(not -> and -> or -> xor -> elem -> map ->
-		(elem true (elem false none))
+	(not -> and -> or -> xor -> elem -> fold ->
+		fold xor true (elem true (elem false (elem true none)))
 	)
 	(b -> b false true)
 	(b1 -> b2 -> b1 b2 false) 
 	(b1 -> b2 -> b1 true b2) 
 	(b1 -> b2 -> b1 (b2 false true) b2) 
 	(value -> next -> some ((v1 -> v2 -> fn -> fn v1 v2) value next))
-	(self -> fn -> list_head -> (
-		list_head (tuple -> (
-			value -> next -> elem (fn value) (self self fn next)
-		) tuple) (none))
-	)
+	(combinator (self -> fn -> acc -> list_head -> 
+		list_head 
+		(tuple -> tuple (
+			value -> next -> self self fn (fn acc value) next
+		)) 
+		(acc)
+	))
 )
 (t -> f -> t)
 (t -> f -> f)
