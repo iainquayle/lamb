@@ -81,10 +81,10 @@ impl<'a> LazyClosure<'a> {
 
 	pub fn format_with_map(&self, ident_map: &IdentMap, depth: usize, max_depth: usize) -> String {
 		let next_depth = depth + 1;
-		self.format_with_map_rec(self.node, ident_map, HashSet::new(), next_depth, max_depth)
+		self.format_with_map_rec(self.node, ident_map, &HashSet::new(), next_depth, max_depth)
 	}
 
-	fn format_with_map_rec(&self, node: &Node, ident_map: &IdentMap, unbound_idents: HashSet<usize>, depth: usize, max_depth: usize) -> String {
+	fn format_with_map_rec(&self, node: &Node, ident_map: &IdentMap, unbound_idents: &HashSet<usize>, depth: usize, max_depth: usize) -> String {
 		let next_depth = depth + 1;
 		match node {
 			Node::Func { binding, expr} => {
@@ -94,24 +94,20 @@ impl<'a> LazyClosure<'a> {
 				let binding_line = front_pad + &binding_str;
 				let mut unbound_idents = unbound_idents.clone();
 				unbound_idents.insert(*binding);
-				let remainder = self.format_with_map_rec(expr, ident_map, unbound_idents, next_depth, max_depth);
+				let remainder = self.format_with_map_rec(expr, ident_map, &unbound_idents, next_depth, max_depth);
 				binding_line + &remainder
 			},
 			Node::Apply { lhs, rhs} => {
 				self.format_with_map_rec(lhs, ident_map, unbound_idents, next_depth, max_depth)
 				+ &"\n"
-				+ &self.format_with_map_rec(lhs, ident_map, unbound_idents, next_depth, max_depth)
+				+ &self.format_with_map_rec(rhs, ident_map, unbound_idents, next_depth, max_depth)
 			},
 			Node::Ident(ident) => {
 				let front_pad = "  ".repeat(depth);
-
-				match (unbound_idents.contains(ident), self.scope.get(*ident)) {
-					(true, _) | (_, None) => front_pad + &try_stringify_ident(&ident_map, *ident),
-					(false, Some(closure)) => {
-
-					}
+				match (unbound_idents.contains(ident), depth > max_depth, self.scope.get(*ident)) {
+					(true, _, _) | (_, true, _) | (_, _, None) => front_pad + &try_stringify_ident(&ident_map, *ident),
+					(false, false, Some(closure)) => closure.format_with_map(ident_map, next_depth, max_depth)
 				}
-
 			}
 		}
 	}
