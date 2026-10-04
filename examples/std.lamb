@@ -1,9 +1,10 @@
 (true -> false -> some -> none -> tuple_2 -> combinator ->
 	(not -> and -> or -> xor -> elem -> foldl -> foldr ->
-		(reverse ->
-			foldl xor true (elem true (elem false (elem true none)))
+		(reverse -> map ->
+			foldr xor true (elem true (elem false (elem true none)))
 		)
-		(foldl (acc -> value -> elem value acc) none)
+		(foldl -> (acc -> value -> elem value acc) none)
+		(foldl -> fn -> (acc -> value -> elem (fn value) acc) none)
 	)
 	(b -> b false true)
 	(b1 -> b2 -> b1 b2 false) 
