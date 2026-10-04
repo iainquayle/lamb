@@ -1,34 +1,34 @@
 (true -> false -> some -> none -> tuple_2 -> combinator ->
 	(not -> and -> or -> xor -> elem -> foldl -> foldr ->
 		(reverse -> map ->
-			foldr xor true (elem true (elem false (elem true none)))
+			foldl xor true (elem true (elem false (elem true none)))
 		)
 		(foldl -> (acc -> value -> elem value acc) none)
-		(foldl -> fn -> (acc -> value -> elem (fn value) acc) none)
+		(foldr -> fn -> (acc -> value -> elem (fn value) acc) none)
 	)
-	(b -> b false true)
-	(b1 -> b2 -> b1 b2 false) 
-	(b1 -> b2 -> b1 true b2) 
-	(b1 -> b2 -> b1 (b2 false true) b2) 
+	(bool -> bool false true)
+	(bool_1 -> bool_2 -> bool_1 bool_2 false) 
+	(bool_1 -> bool_2 -> bool_1 true bool_2) 
+	(bool_1 -> bool_2 -> bool_1 (bool_2 false true) bool_2) 
 	(value -> next -> some (tuple_2 value next))
-	(combinator (self -> fn -> acc -> list_head -> 
+	(combinator (self_fold -> fn -> acc -> list_head -> 
 		list_head 
 		(tuple_value_next -> tuple_value_next (
-			value -> next -> (combinator self) fn (fn acc value) next
+			value -> next -> (combinator self_fold) fn (fn acc value) next
 		)) 
 		(acc)
 	))
-	(combinator (self -> fn -> acc -> list_head -> 
+	(combinator (self_fold -> fn -> acc -> list_head -> 
 		list_head 
 		(tuple_value_next -> tuple_value_next (
-			value -> next -> fn ((combinator self) fn acc next) value
+			value -> next -> fn ((combinator self_fold) fn acc next) value
 		)) 
 		(acc)
 	))
 )
-(t -> f -> t)
-(t -> f -> f)
+(true -> false -> true)
+(true -> false -> false)
 (value -> on_some -> on_none -> on_some value)
 (on_some -> on_none -> on_none)
-(v1 -> v2 -> fn -> fn v1 v2)
+(value_1 -> value_2 -> fn -> fn value_1 value_2)
 (x -> x x)
