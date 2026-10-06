@@ -1,10 +1,11 @@
-(true -> false -> some -> none -> tuple_2 -> combinator ->
+(true -> false -> some -> none -> tuple_2 -> combinator -> ident ->
 	(not -> and -> or -> xor -> elem -> foldl -> foldr ->
-		(reverse -> map ->
-			foldl and true ( (elem true (elem true (elem true none))))
+		(reverse -> map -> filter ->
+			foldl and true (map not (filter ident (elem true (elem false (elem true none)))))
 		)
 		(list -> foldl (acc -> value -> elem value acc) none list)
 		(fn -> list -> foldr (acc -> value -> elem (fn value) acc) none list)
+		(fn -> list -> foldr (acc -> value -> fn value (elem value acc) acc) none list)
 	)
 	(bool -> bool false true)
 	(bool_1 -> bool_2 -> bool_1 bool_2 false) 
@@ -32,3 +33,4 @@
 (on_some -> on_none -> on_none)
 (value_1 -> value_2 -> fn -> fn value_1 value_2)
 (x -> x x)
+(x -> x)
