@@ -1,8 +1,8 @@
 (true -> false -> some -> none -> tuple_2 -> combinator -> ident ->
-	(not -> and -> or -> xor -> elem -> foldl -> foldr ->
-		(reverse -> map -> filter -> concat ->
+	(not -> and -> or -> xor -> elem -> tail -> foldl -> foldr ->
+		(reverse -> map -> filter -> concat -> transpose ->
 			(eq ->
-				foldl and true (concat (elem true (elem true none)) (elem true (elem false none))) 
+				foldl and true (concat (elem true (tail true)) (elem true (tail true))) 
 			)
 			(list_1 -> list_2 -> ident)
 		)
@@ -10,12 +10,16 @@
 		(fn -> list -> foldr (acc -> value -> elem (fn value) acc) none list)
 		(fn -> list -> foldr (acc -> value -> fn value (elem value acc) acc) none list)
 		(list_1 -> list_2 -> foldr (acc -> value -> elem value acc) list_2 list_1)
+		(list_of_lists -> combinator (
+			ident
+		))
 	)
 	(bool -> bool false true)
 	(bool_1 -> bool_2 -> bool_1 bool_2 false) 
 	(bool_1 -> bool_2 -> bool_1 true bool_2) 
 	(bool_1 -> bool_2 -> bool_1 (bool_2 false true) bool_2) 
 	(value -> next -> some (tuple_2 value next))
+	(value -> some (tuple_2 value none))
 	(combinator (self_fold -> fn -> acc -> list_head -> 
 		list_head 
 		(tuple_value_next -> tuple_value_next (
